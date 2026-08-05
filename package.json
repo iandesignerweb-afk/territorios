@@ -1,0 +1,11 @@
+{
+  "name": "quadracontrol",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": ["frontend", "backend"],
+  "scripts": {
+    "dev:web": "npm run dev --workspace=frontend",
+    "dev:api": "npm run start:dev --workspace=backend",
+    "build": "npm run build --workspaces"
+  }
+}

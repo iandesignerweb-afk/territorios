@@ -1,0 +1,99 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+enum BlockStatus {
+  PENDING
+  COMPLETED
+}
+enum HistoryAction {
+  COMPLETED
+  RESET
+}
+
+model User {
+  id String @id @default(cuid())
+  name String
+  username String @unique
+  passwordHash String
+  role Role @default(USER)
+  active Boolean @default(true)
+  completedBlocks Block[] @relation("CompletedBy")
+  histories BlockHistory[]
+  logs AuditLog[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+model City {
+  id String @id @default(cuid())
+  name String @unique
+  neighborhoods Neighborhood[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+model Neighborhood {
+  id String @id @default(cuid())
+  name String
+  cityId String
+  city City @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  blocks Block[]
+  cycles Cycle[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([cityId, name])
+}
+model Cycle {
+  id String @id @default(cuid())
+  number Int
+  neighborhoodId String
+  neighborhood Neighborhood @relation(fields: [neighborhoodId], references: [id], onDelete: Cascade)
+  startedAt DateTime @default(now())
+  finishedAt DateTime?
+  histories BlockHistory[]
+  @@unique([neighborhoodId, number])
+}
+model Block {
+  id String @id @default(cuid())
+  number String
+  description String?
+  neighborhoodId String
+  neighborhood Neighborhood @relation(fields: [neighborhoodId], references: [id], onDelete: Cascade)
+  status BlockStatus @default(PENDING)
+  completedById String?
+  completedBy User? @relation("CompletedBy", fields: [completedById], references: [id])
+  completedAt DateTime?
+  histories BlockHistory[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@unique([neighborhoodId, number])
+}
+model BlockHistory {
+  id String @id @default(cuid())
+  action HistoryAction
+  blockId String
+  block Block @relation(fields: [blockId], references: [id], onDelete: Cascade)
+  cycleId String
+  cycle Cycle @relation(fields: [cycleId], references: [id])
+  userId String?
+  user User? @relation(fields: [userId], references: [id])
+  occurredAt DateTime @default(now())
+}
+model AuditLog {
+  id String @id @default(cuid())
+  action String
+  description String
+  ip String?
+  userAgent String?
+  userId String?
+  user User? @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+}
